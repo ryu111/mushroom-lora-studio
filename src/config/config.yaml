@@ -1,0 +1,102 @@
+# ===================================
+# 蘑菇角色生成器配置文件
+# ===================================
+
+# ===================================
+# 模型配置
+# ===================================
+models:
+  # 已實作的模型
+  StableDiffusionV15Model:
+    特點: "通用型文字轉圖模型"
+    適合用途: "穩定角色構型、非二次元圖像風格"
+    模型ID: "runwayml/stable-diffusion-v1-5"
+
+  AnimefullFinalPrunedFp16Model:
+    特點: "適合 LoRA 訓練與應用"
+    適合用途: "常見 LoRA 訓練底模"
+    模型路徑: "models/animefull-final-pruned-fp16.safetensors"
+
+  # 待實作的模型
+  # Anything-v4.5:
+  #   特點: "二次元風格強、兼容性高"
+  #   適合用途: "通用二次元、角色為主"
+  #   備註: "尚未實作"
+
+  # Counterfeit-v3.0:
+  #   特點: "細節豐富、柔和筆觸"
+  #   適合用途: "精緻角色或美型風格"
+  #   備註: "尚未實作"
+
+  # pastel-mix:
+  #   特點: "柔和、粉彩風格"
+  #   適合用途: "可愛、溫暖氛圍角色"
+  #   備註: "尚未實作"
+
+  # meinamix:
+  #   特點: "卡通與實感之間的混合"
+  #   適合用途: "更穩定的五官與比例"
+  #   備註: "尚未實作"
+
+# ===================================
+# 生成配置
+# ===================================
+# 基本配置
+model: AnimefullFinalPrunedFp16Model  # 使用的模型，目前支援 StableDiffusionV15Model 與 AnimefullFinalPrunedFp16Model
+# 🎯 測試輪次安排 - 第三輪：優化提示詞測試
+weight_name:                          # 使用的 LoRA 權重文件名
+  - mushroom-28.safetensors  # 最佳權重 (損失: 0.011)
+
+# 第三輪推理配置 - 優化提示詞驗證
+inference_config:
+  - steps: 50       # 標準質量測試
+    num_images: 10   # 充足樣本驗證改進效果
+
+# 參數配置
+parameters:
+  guidance_scale: 8.0  # 提示詞引導強度（0.0–10.0），數值越高，生成圖越符合 prompt，但可能會變得不自然
+  strength: 0.25       # 圖像變化強度（僅在 img2img 模式下有效），值越高，生成圖與原圖差異越大
+  noise_level: 0.0     # 控制圖像初始隨機性的參數，建議值：0.0
+
+# 參數組合範例
+# parameter_presets:
+#   # 高保真設定（幾乎維持原圖，僅小幅修飾）
+#   high_fidelity:
+#     guidance_scale: 7.5
+#     strength: 0.25
+  
+#   # 創意變體組（允許大幅創新構圖與動作）
+#   creative:
+#     guidance_scale: 9.0
+#     strength: 0.7
+
+# 圖像尺寸
+image_size:
+  height: 512  # 設定生成圖像的高度，建議值：512
+  width: 512   # 設定生成圖像的寬度，建議值：512
+
+# ===================================
+# 圖像處理配置
+# ===================================
+# 原始圖像配置
+original_image:
+  path: "assets/reference_images/dgu_13.png"  # 原始圖像的路徑
+
+# ===================================
+# 提示詞配置
+# ===================================
+# 正向提示詞 - 精簡優化版本 (控制在77 tokens內)
+prompt_template: >
+  cartoon mushroom character, light blue cap with three white dots, yellow feet, soft shading, flat style, matte finish, symmetrical face, centered eyes, consistent proportions
+
+# 負向提示詞 - 強化版本
+negative_prompt: >
+  inconsistent proportions, asymmetrical features, distorted cap, missing spots, color shift, deformed body,
+  extra limbs, multiple arms, wrong hands, distorted anatomy, malformed face, extra hands, deformed hands, fused fingers,
+  plush toy look, toy-like, clay-like, squished character,
+  overly glossy, strange shine, bloom, glowing outline, realistic rendering, hard shadow, specular highlight, reflective surface,
+  wrong face angle, cropped face, occluded face,
+  duplicate characters, regular mushroom, no face,
+  3d, CGI, realistic, claymation, sketch, low-res,
+  watermark, text, logo,
+  holding item, object in hand, extra object, brown ball, yellow mushroom, extra mushroom, props
