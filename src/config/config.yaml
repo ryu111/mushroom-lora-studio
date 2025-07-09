@@ -43,22 +43,23 @@ models:
 # ===================================
 # 基本配置
 model: AnimefullFinalPrunedFp16Model  # 使用的模型，目前支援 StableDiffusionV15Model 與 AnimefullFinalPrunedFp16Model
-# 🎯 測試輪次安排 - 第四輪：新訓練權重測試
+# 🎯 測試輪次安排 - 第五輪：第三輪訓練結果測試 (優化Caption版本)
 weight_name:                          # 使用的 LoRA 權重文件名
-  - mushroom-32.safetensors  # 穩定次佳 (損失: 0.00969)
-  - mushroom-36.safetensors  # 理論最佳 (損失: 0.00821)
-  - mushroom-40.safetensors  # 最終版本 (損失: 0.00961)
+  - mushroom-30.safetensors  # 穩定選擇 (損失: 0.0090)
+  - mushroom-36.safetensors  # 🥇 最佳權重 (損失: 0.0076) - 歷史最低！
+  - mushroom-40.safetensors  # 最終版本 (損失: 0.0083)
 
-# 第四輪推理配置 - 新權重比較測試
+# 第五輪推理配置 - 優化Caption效果驗證
 inference_config:
   - steps: 50       # 標準質量測試
-    num_images: 10   # 每個權重3張，快速比較
+    num_images: 5    # 每個權重3張，重點測試比例穩定性
+
 
 # 參數配置
 parameters:
-  guidance_scale: 8.0  # 提示詞引導強度（0.0–10.0），數值越高，生成圖越符合 prompt，但可能會變得不自然
-  strength: 0.25       # 圖像變化強度（僅在 img2img 模式下有效），值越高，生成圖與原圖差異越大
-  noise_level: 0.0     # 控制圖像初始隨機性的參數，建議值：0.0
+  guidance_scale: 8.0   # 提示詞引導強度（0.0–10.0），數值越高，生成圖越符合 prompt，但可能會變得不自然
+  strength: 0.25         # 圖像變化強度（僅在 img2img 模式下有效），值越高，生成圖與原圖差異越大
+  noise_level: 0.0      # 控制圖像初始隨機性的參數，建議值：0.0
 
 # 參數組合範例
 # parameter_presets:
@@ -90,18 +91,20 @@ original_image:
 # ===================================
 # 正向提示詞配置
 # ===================================
-# 與訓練數據一致的觸發詞版本 (控制在77 tokens內)
+# 與訓練數據一致的觸發詞版本 (當前使用: 20 tokens，控制在77 tokens內)
 # 目的：激活LoRA學習的特徵，確保生成符合DGU蘑菇角色設定的圖像
 prompt_template: >
-  single dgu mushroom, full body, simple face, two eyes, simple mouth, short arms, short legs, consistent proportions, symmetrical features, soft shading, flat style
+  single dgu mushroom, full body, simple face, two eyes, flat mouth, only two arms, only two legs, exactly three white dots, proper cap size, consistent proportions, symmetrical features, soft shading, flat style
 
-# 正向提示詞說明：
+# 正向提示詞說明 (Token計算: 20/77)：
 # - single dgu mushroom: 觸發詞，激活LoRA訓練的角色特徵，確保只生成一隻角色
 # - full body: 全身圖，確保完整顯示角色從頭到腳
 # - simple face: 簡單臉部，符合卡通風格設定
 # - two eyes: 明確指定雙眼，防止多眼或缺眼
-# - simple mouth: 簡單嘴巴，支援微笑和張嘴兩種表情
-# - short arms, short legs: 短四肢特徵，符合角色設定
+# - flat mouth: 平面嘴巴，防止3D突出效果，保持平面卡通風格
+# - only two arms, only two legs: 強調只有雙手雙腳，防止正面和側身時出現四隻手的問題
+# - exactly three white dots: 精確指定3個白點，防止鏡像翻轉訓練導致的4個白點問題
+# - proper cap size: 適當帽子大小，防止蘑菇帽過大失調
 # - consistent proportions: 一致比例，解決之前訓練中的比例不穩定問題
 # - symmetrical features: 對稱特徵，確保角色外觀平衡
 # - soft shading, flat style: 柔和陰影和平面風格，維持卡通質感
@@ -113,11 +116,13 @@ prompt_template: >
 # 目的：防止生成不符合DGU蘑菇角色設定的特徵和問題
 negative_prompt: >
   inconsistent proportions, asymmetrical features, distorted cap, missing white dots, wrong cap color, deformed body,
-  extra limbs, multiple arms, more than two arms, human arms, long arms, extended arms, visible hands, fingers, human hands, wrong hands, distorted anatomy, malformed face,
+  extra limbs, multiple arms, more than two arms, four arms, extra arms, duplicate arms, symmetrical arms, mirrored arms, human arms, long arms, extended arms, visible hands, fingers, human hands, wrong hands, distorted anatomy, malformed face,
   extra legs, multiple legs, more than two legs, human legs, long legs, extended legs, bare feet, human feet, toes, detailed feet, no shoes, missing shoes,
   complex face, detailed face, nose, nostrils, eyebrows, eyelashes, wrinkles, facial hair, beard, mustache, cheeks, human face, realistic face,
   multiple eyes, more than two eyes, extra eyes, complex eyes, detailed eyes, pupils, iris, eye details,
-  multiple mouths, extra mouth, complex mouth, teeth, tongue, lips, detailed mouth,
+  multiple mouths, extra mouth, complex mouth, teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth, protruding mouth, extruded mouth,
+  four white dots, extra white dots, more than three dots, wrong number of dots, missing dots, dot pattern error, mirrored dots, symmetrical dot pattern,
+  oversized cap, large cap, big cap, huge cap, cap too big, wrong cap size, disproportionate cap,
   multiple characters, duplicate characters, multiple mushrooms, two mushrooms, group, crowd, more than one character, extra character,
   cropped, cropped body, partial body, cut off, cropped legs, cropped arms, cropped head, close-up, portrait, head shot, upper body only,
   blurry, out of focus, motion blur, low quality, bad quality, worst quality, jpeg artifacts, compression artifacts,
@@ -129,29 +134,40 @@ negative_prompt: >
   extra mushroom, brown mushroom, red mushroom, green mushroom, wrong mushroom color,
   background characters, crowd in background, busy background
 
-# 負向提示詞分類說明：
+# 負向提示詞分類說明 (針對發現問題的強化版本)：
 #
 # 【基本結構控制】
-# - inconsistent proportions: 不一致比例 - 防止角色比例失調
+# - inconsistent proportions: 不一致比例 - 防止角色比例失調 (已改善但仍需控制)
 # - asymmetrical features: 不對稱特徵 - 確保角色外觀平衡
 # - distorted cap, missing white dots, wrong cap color: 帽子相關 - 保持淺藍帽+白點特徵
 # - deformed body: 變形身體 - 防止身體結構異常
 #
-# 【四肢控制】
-# - extra limbs, multiple arms, more than two arms: 多餘肢體 - 確保只有雙手雙腳
+# 【四肢控制 - 強化四手問題】
+# - extra limbs, multiple arms, more than two arms, four arms: 多餘肢體 - 防止四隻手問題
+# - extra arms, duplicate arms, symmetrical arms, mirrored arms: 重複手臂 - 特別防止正面視角的對稱四手問題
 # - human arms, long arms, extended arms: 人類化手臂 - 保持短手臂卡通風格
 # - visible hands, fingers, human hands: 複雜手部 - 避免顯示手指細節
 # - extra legs, multiple legs, human legs, long legs: 腿部控制 - 保持短腿特徵
 # - bare feet, human feet, toes, detailed feet: 腳部控制 - 確保穿鞋，避免人類腳部
 # - no shoes, missing shoes: 鞋子控制 - 確保角色穿著鞋子
 #
-# 【臉部控制】
+# 【臉部控制 - 強化嘴部寫實問題】
 # - complex face, detailed face: 複雜臉部 - 保持簡單卡通臉部
 # - nose, eyebrows, eyelashes, cheeks: 面部特徵 - 防止人類面部特徵
 # - multiple eyes, more than two eyes, extra eyes: 眼部控制 - 確保只有雙眼
 # - complex eyes, detailed eyes, pupils, iris: 眼部細節 - 避免過於寫實的眼部
 # - multiple mouths, extra mouth, complex mouth: 嘴部控制 - 確保簡單嘴部
-# - teeth, tongue, lips, detailed mouth: 嘴部細節 - 避免顯示口腔內部
+# - teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth: 嘴部細節 - 強化防止過於寫實的嘴部
+# - protruding mouth, extruded mouth: 突出嘴部 - 防止3D突出效果，保持平面風格
+#
+# 【白點數量控制 - 強化鏡像問題】
+# - four white dots, extra white dots, more than three dots: 白點數量控制 - 確保只有3個白點
+# - wrong number of dots, missing dots, dot pattern error: 白點模式控制 - 防止翻轉訓練導致的白點錯誤
+# - mirrored dots, symmetrical dot pattern: 鏡像白點 - 特別防止鏡像翻轉產生的對稱白點問題
+#
+# 【帽子大小控制 - 新增】
+# - oversized cap, large cap, big cap, huge cap: 過大帽子 - 防止蘑菇帽過大
+# - cap too big, wrong cap size, disproportionate cap: 帽子比例 - 確保帽子與身體比例協調
 #
 # 【數量與構圖控制】
 # - multiple characters, duplicate characters: 多角色 - 確保只有單一角色

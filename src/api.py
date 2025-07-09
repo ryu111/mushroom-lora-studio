@@ -170,13 +170,23 @@ if __name__ == "__main__":
     import uvicorn
     
     # 從環境變數讀取配置（適配 Render）
-    host = os.getenv("HOST", "0.0.0.0")
+    host = "0.0.0.0"  # Render 要求必須是 0.0.0.0
     port = int(os.getenv("PORT", 8000))
-    reload = os.getenv("RELOAD", "false").lower() == "true"
     
     print(f"🍄 蘑菇角色生成 API 啟動中...")
     print(f"📡 監聽地址: {host}:{port}")
-    print(f"🔄 重載模式: {reload}")
+    print(f"🌍 環境變數 PORT: {os.getenv('PORT', '未設定')}")
     
-    # 直接傳遞 app 實例而不是字符串
-    uvicorn.run(app, host=host, port=port, reload=reload)
+    try:
+        # 使用字符串形式，避免模塊導入問題
+        uvicorn.run(
+            "src.api:app",
+            host=host,
+            port=port,
+            reload=False,  # 生產環境不使用 reload
+            access_log=True,
+            log_level="info"
+        )
+    except Exception as e:
+        print(f"❌ 啟動失敗: {e}")
+        raise
