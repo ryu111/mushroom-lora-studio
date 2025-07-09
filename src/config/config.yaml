@@ -43,14 +43,16 @@ models:
 # ===================================
 # 基本配置
 model: AnimefullFinalPrunedFp16Model  # 使用的模型，目前支援 StableDiffusionV15Model 與 AnimefullFinalPrunedFp16Model
-# 🎯 測試輪次安排 - 第三輪：優化提示詞測試
+# 🎯 測試輪次安排 - 第四輪：新訓練權重測試
 weight_name:                          # 使用的 LoRA 權重文件名
-  - mushroom-28.safetensors  # 最佳權重 (損失: 0.011)
+  - mushroom-32.safetensors  # 穩定次佳 (損失: 0.00969)
+  - mushroom-36.safetensors  # 理論最佳 (損失: 0.00821)
+  - mushroom-40.safetensors  # 最終版本 (損失: 0.00961)
 
-# 第三輪推理配置 - 優化提示詞驗證
+# 第四輪推理配置 - 新權重比較測試
 inference_config:
   - steps: 50       # 標準質量測試
-    num_images: 10   # 充足樣本驗證改進效果
+    num_images: 10   # 每個權重3張，快速比較
 
 # 參數配置
 parameters:
@@ -85,18 +87,98 @@ original_image:
 # ===================================
 # 提示詞配置
 # ===================================
-# 正向提示詞 - 精簡優化版本 (控制在77 tokens內)
+# ===================================
+# 正向提示詞配置
+# ===================================
+# 與訓練數據一致的觸發詞版本 (控制在77 tokens內)
+# 目的：激活LoRA學習的特徵，確保生成符合DGU蘑菇角色設定的圖像
 prompt_template: >
-  cartoon mushroom character, light blue cap with three white dots, yellow feet, soft shading, flat style, matte finish, symmetrical face, centered eyes, consistent proportions
+  single dgu mushroom, full body, simple face, two eyes, simple mouth, short arms, short legs, consistent proportions, symmetrical features, soft shading, flat style
 
-# 負向提示詞 - 強化版本
+# 正向提示詞說明：
+# - single dgu mushroom: 觸發詞，激活LoRA訓練的角色特徵，確保只生成一隻角色
+# - full body: 全身圖，確保完整顯示角色從頭到腳
+# - simple face: 簡單臉部，符合卡通風格設定
+# - two eyes: 明確指定雙眼，防止多眼或缺眼
+# - simple mouth: 簡單嘴巴，支援微笑和張嘴兩種表情
+# - short arms, short legs: 短四肢特徵，符合角色設定
+# - consistent proportions: 一致比例，解決之前訓練中的比例不穩定問題
+# - symmetrical features: 對稱特徵，確保角色外觀平衡
+# - soft shading, flat style: 柔和陰影和平面風格，維持卡通質感
+
+# ===================================
+# 負向提示詞配置
+# ===================================
+# 最終優化版本 - 分類控制各種生成問題
+# 目的：防止生成不符合DGU蘑菇角色設定的特徵和問題
 negative_prompt: >
-  inconsistent proportions, asymmetrical features, distorted cap, missing spots, color shift, deformed body,
-  extra limbs, multiple arms, wrong hands, distorted anatomy, malformed face, extra hands, deformed hands, fused fingers,
+  inconsistent proportions, asymmetrical features, distorted cap, missing white dots, wrong cap color, deformed body,
+  extra limbs, multiple arms, more than two arms, human arms, long arms, extended arms, visible hands, fingers, human hands, wrong hands, distorted anatomy, malformed face,
+  extra legs, multiple legs, more than two legs, human legs, long legs, extended legs, bare feet, human feet, toes, detailed feet, no shoes, missing shoes,
+  complex face, detailed face, nose, nostrils, eyebrows, eyelashes, wrinkles, facial hair, beard, mustache, cheeks, human face, realistic face,
+  multiple eyes, more than two eyes, extra eyes, complex eyes, detailed eyes, pupils, iris, eye details,
+  multiple mouths, extra mouth, complex mouth, teeth, tongue, lips, detailed mouth,
+  multiple characters, duplicate characters, multiple mushrooms, two mushrooms, group, crowd, more than one character, extra character,
+  cropped, cropped body, partial body, cut off, cropped legs, cropped arms, cropped head, close-up, portrait, head shot, upper body only,
+  blurry, out of focus, motion blur, low quality, bad quality, worst quality, jpeg artifacts, compression artifacts,
   plush toy look, toy-like, clay-like, squished character,
   overly glossy, strange shine, bloom, glowing outline, realistic rendering, hard shadow, specular highlight, reflective surface,
-  wrong face angle, cropped face, occluded face,
-  duplicate characters, regular mushroom, no face,
-  3d, CGI, realistic, claymation, sketch, low-res,
-  watermark, text, logo,
-  holding item, object in hand, extra object, brown ball, yellow mushroom, extra mushroom, props
+  wrong face angle, cropped face, occluded face, no face, faceless,
+  3d, CGI, realistic, claymation, sketch, low-res, pixelated,
+  watermark, text, logo, signature, artist name,
+  extra mushroom, brown mushroom, red mushroom, green mushroom, wrong mushroom color,
+  background characters, crowd in background, busy background
+
+# 負向提示詞分類說明：
+#
+# 【基本結構控制】
+# - inconsistent proportions: 不一致比例 - 防止角色比例失調
+# - asymmetrical features: 不對稱特徵 - 確保角色外觀平衡
+# - distorted cap, missing white dots, wrong cap color: 帽子相關 - 保持淺藍帽+白點特徵
+# - deformed body: 變形身體 - 防止身體結構異常
+#
+# 【四肢控制】
+# - extra limbs, multiple arms, more than two arms: 多餘肢體 - 確保只有雙手雙腳
+# - human arms, long arms, extended arms: 人類化手臂 - 保持短手臂卡通風格
+# - visible hands, fingers, human hands: 複雜手部 - 避免顯示手指細節
+# - extra legs, multiple legs, human legs, long legs: 腿部控制 - 保持短腿特徵
+# - bare feet, human feet, toes, detailed feet: 腳部控制 - 確保穿鞋，避免人類腳部
+# - no shoes, missing shoes: 鞋子控制 - 確保角色穿著鞋子
+#
+# 【臉部控制】
+# - complex face, detailed face: 複雜臉部 - 保持簡單卡通臉部
+# - nose, eyebrows, eyelashes, cheeks: 面部特徵 - 防止人類面部特徵
+# - multiple eyes, more than two eyes, extra eyes: 眼部控制 - 確保只有雙眼
+# - complex eyes, detailed eyes, pupils, iris: 眼部細節 - 避免過於寫實的眼部
+# - multiple mouths, extra mouth, complex mouth: 嘴部控制 - 確保簡單嘴部
+# - teeth, tongue, lips, detailed mouth: 嘴部細節 - 避免顯示口腔內部
+#
+# 【數量與構圖控制】
+# - multiple characters, duplicate characters: 多角色 - 確保只有單一角色
+# - multiple mushrooms, two mushrooms: 多蘑菇 - 防止生成多隻蘑菇
+# - group, crowd, more than one character: 群組 - 避免群體場景
+# - cropped, partial body, cut off: 裁切問題 - 確保完整全身顯示
+# - close-up, portrait, head shot, upper body only: 特寫問題 - 避免只顯示部分身體
+#
+# 【圖像品質控制】
+# - blurry, out of focus, motion blur: 模糊問題 - 確保圖像清晰
+# - low quality, bad quality, worst quality: 品質問題 - 提升整體品質
+# - jpeg artifacts, compression artifacts: 壓縮問題 - 避免壓縮瑕疵
+#
+# 【風格控制】
+# - plush toy look, toy-like, clay-like: 材質問題 - 避免玩具或黏土質感
+# - squished character: 壓扁角色 - 防止角色變形
+# - overly glossy, strange shine, bloom: 光澤問題 - 避免過度光澤效果
+# - realistic rendering, hard shadow: 寫實問題 - 保持卡通風格
+# - 3d, CGI, realistic, claymation: 渲染風格 - 避免3D或寫實風格
+#
+# 【技術與後製控制】
+# - sketch, low-res, pixelated: 技術問題 - 避免草圖或低解析度
+# - watermark, text, logo, signature: 標記問題 - 確保乾淨畫面
+# - artist name: 簽名問題 - 避免藝術家簽名
+#
+# 【顏色與背景控制】
+# - brown mushroom, red mushroom, green mushroom: 顏色控制 - 保持淺藍色蘑菇帽
+# - wrong mushroom color: 錯誤顏色 - 防止帽子顏色變異
+# - background characters, crowd in background: 背景控制 - 確保背景乾淨
+# - busy background: 複雜背景 - 避免背景干擾主角
