@@ -178,4 +178,5 @@ if __name__ == "__main__":
     print(f"📡 監聽地址: {host}:{port}")
     print(f"🔄 重載模式: {reload}")
     
-    uvicorn.run("src.api:app", host=host, port=port, reload=reload)
+    # 直接傳遞 app 實例而不是字符串
+    uvicorn.run(app, host=host, port=port, reload=reload)
