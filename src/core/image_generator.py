@@ -93,6 +93,11 @@ class ImageGenerator:
             filename = f"{self.weight_name}_{self.action_key}_{self.expression_key}_{timestamp}_transparent.png"
             full_path = os.path.join(output_dir, filename)
             
+            # 修正 output_img 可能為 ndarray 或 bytes 的情況
+            if isinstance(output_img, np.ndarray):
+                output_img = Image.fromarray(output_img)
+            elif isinstance(output_img, bytes):
+                output_img = Image.open(BytesIO(output_img))
             output_img.save(full_path)
             print(f"✅ API 已生成圖像：{full_path}", flush=True)
             
