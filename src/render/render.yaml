@@ -1,9 +1,20 @@
 services:
   - type: web
+    # 定義這是一個 Web Service，需要接收 HTTP 流量並監聽端口。
     name: mushroom-lora-api
+    # 服務的名稱。
     runtime: python
+    # 告訴 Render 使用 Python 執行環境。
     buildCommand: pip install -r src/render/requirements.txt
-    startCommand: python -m src.render.main
+    # 建置指令：在部署前，安裝所有在 requirements.txt 中列出的 Python 套件。
+    # 這一步看起來是正確的。
+    startCommand: uvicorn src.render.api:app --host 0.0.0.0 --port $PORT
+    # 啟動指令：這是服務啟動後要運行的命令。
+    # 這個指令的語法是完全正確的，它遵循了 Render 的所有最佳實踐。
     envVars:
       - key: PYTHONPATH
         value: .
+        # 這是一個非常關鍵且正確的設定！
+        # 它將您專案的根目錄 (.) 加入到 Python 的模塊搜索路徑中。
+        # 這就是為什麼您的程式碼可以使用 `from src.core.config_manager ...` 這種絕對路徑導入，
+        # 而不會出現 ModuleNotFoundError 的原因。

@@ -1,7 +1,6 @@
-"""
-圖像生成 API
-提供 RESTful API 來生成蘑菇角色圖像
-"""
+# ==================== 偵錯版本，請完整複製 ====================
+print("--- 步驟 0：Python 腳本開始執行 ---", flush=True)
+
 import os
 import sys
 import time
@@ -13,20 +12,55 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile, F
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import torch
 
-# 導入我們的模塊
-from src.core.config_manager import Config
-from src.core.model_manager import ModelManager
-from src.core.image_generator import ImageGenerator
+# 在導入 torch 前後加上日誌，因為它非常消耗資源
+print("--- 步驟 1：準備導入 torch 函式庫... ---", flush=True)
+try:
+    import torch
+    print("--- 步驟 2：torch 函式庫導入成功 ---", flush=True)
+except Exception as e:
+    print(f"!!!!!!!! 致命錯誤：導入 torch 時發生問題 !!!!!!!!", flush=True)
+    print(f"錯誤類型: {type(e).__name__}, 錯誤詳情: {e}", flush=True)
+    sys.exit(1) # 導入失敗，直接退出
 
-# 創建 FastAPI 應用
-app = FastAPI(
-    title="蘑菇角色生成 API",
-    description="用於生成蘑菇角色圖像的 API",
-    version="1.0.0"
-)
+# 包圍所有自訂模塊的導入和初始化
+try:
+    print("--- 步驟 3：準備導入自訂模塊 (Config, ModelManager, ImageGenerator)... ---", flush=True)
+    from src.core.config_manager import Config
+    from src.core.model_manager import ModelManager
+    from src.core.image_generator import ImageGenerator
+    print("--- 步驟 4：自訂模塊導入成功 ---", flush=True)
 
+    # 全局變量初始化
+    print("--- 步驟 5：準備初始化 Config() 物件... ---", flush=True)
+    config = Config()
+    print("--- 步驟 6：Config() 物件初始化成功 ---", flush=True)
+
+    print("--- 步驟 7：準備初始化 ModelManager(config) 物件... ---", flush=True)
+    model_manager = ModelManager(config)
+    print("--- 步驟 8：ModelManager(config) 物件初始化成功 ---", flush=True)
+    
+    loaded_models = {}  # 緩存已加載的模型
+
+    # 創建 FastAPI 應用
+    print("--- 步驟 9：準備建立 FastAPI App 實例... ---", flush=True)
+    app = FastAPI(
+        title="蘑菇角色生成 API",
+        description="用於生成蘑菇角色圖像的 API",
+        version="1.0.0"
+    )
+    print("--- 步驟 10：FastAPI App 實例建立成功 ---", flush=True)
+
+except Exception as e:
+    print(f"!!!!!!!! 致命錯誤：在初始化自訂模塊或 FastAPI 時發生問題 !!!!!!!!", flush=True)
+    import traceback
+    # 將詳細的錯誤追蹤印到標準錯誤輸出，這樣在 Render 日誌中更容易看到
+    traceback.print_exc(file=sys.stderr)
+    sys.exit(1) # 初始化失敗，直接退出
+
+# --- 後續的程式碼保持不變，但現在我們知道上面的初始化都成功了 ---
+
+print("--- 步驟 11：準備設定 CORS 中間件... ---", flush=True)
 # 添加 CORS 中間件
 app.add_middleware(
     CORSMiddleware,
@@ -35,11 +69,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 全局變量
-config = Config()
-model_manager = ModelManager(config)
-loaded_models = {}  # 緩存已加載的模型
+print("--- 步驟 12：CORS 中間件設定完成 ---", flush=True)
 
 # 定義請求模型
 class GenerateImageRequest(BaseModel):
@@ -61,6 +91,8 @@ class GenerateImageResponse(BaseModel):
     image_path: str
     generation_time: float
     parameters: Dict[str, Any]
+
+print("--- 步驟 13：API 端點 (Endpoint) 準備定義... ---", flush=True)
 
 # 健康檢查端點
 @app.get("/health")
@@ -165,28 +197,24 @@ async def get_image(image_path: str):
         raise HTTPException(status_code=404, detail="圖像不存在")
     return FileResponse(full_path)
 
-# 主函數
+print("--- 步驟 14：API 端點定義完成 ---", flush=True)
+print("--- 應用程式初始化完畢，準備由 uvicorn 啟動。如果在這之後沒有看到 uvicorn 的日誌，表示問題出在 Render 的 Start Command。---", flush=True)
+
+# 主函數 (這段在 Render 環境下通常不會被執行，因為 Render 直接用 uvicorn 命令啟動)
 if __name__ == "__main__":
     import uvicorn
     
-    # 從環境變數讀取配置（適配 Render）
-    host = "0.0.0.0"  # Render 要求必須是 0.0.0.0
-    port = int(os.getenv("PORT", 10000))  # Render 預設端口為 10000
+    host = "0.0.0.0"
+    port = int(os.getenv("PORT", 10000))
     
-    print(f"🍄 蘑菇角色生成 API 啟動中...")
+    print(f"🍄 蘑菇角色生成 API 啟動中 (本地模式)...")
     print(f"📡 監聽地址: {host}:{port}")
-    print(f"🌍 環境變數 PORT: {os.getenv('PORT', '未設定')}")
     
-    try:
-        # 使用字符串形式，避免模塊導入問題
-        uvicorn.run(
-            "src.render.api:app",
-            host=host,
-            port=port,
-            reload=False,  # 生產環境不使用 reload
-            access_log=True,
-            log_level="info"
-        )
-    except Exception as e:
-        print(f"❌ 啟動失敗: {e}")
-        raise
+    uvicorn.run(
+        "src.render.api:app",
+        host=host,
+        port=port,
+        reload=True, # 本地開發開啟 reload
+        access_log=True,
+        log_level="info"
+    )
