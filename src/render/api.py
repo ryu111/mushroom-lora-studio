@@ -4,12 +4,9 @@ print("--- 步驟 0：Python 腳本開始執行 ---", flush=True)
 import os
 import sys
 import time
-import uuid
-import base64
-from io import BytesIO
-from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile, Form, Body
-from fastapi.responses import JSONResponse, FileResponse
+from typing import Optional, Dict, Any
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -25,11 +22,26 @@ except Exception as e:
 
 # 包圍所有自訂模塊的導入和初始化
 try:
-    print("--- 步驟 3：準備導入自訂模塊 (Config, ModelManager, ImageGenerator)... ---", flush=True)
+    # ==================== 請用這段程式碼替換原有的步驟 3 和 4 ====================
+
+    print("--- 步驟 3：開始逐一導入自訂模塊... ---", flush=True)
+
+    # 導入第一個模塊
+    print("--- 步驟 3.1：準備導入 Config... ---", flush=True)
     from src.core.config_manager import Config
+    print("--- 步驟 3.2：Config 導入成功。 ---", flush=True)
+
+    # 導入第二個模塊
+    print("--- 步驟 3.3：準備導入 ModelManager... ---", flush=True)
     from src.core.model_manager import ModelManager
+    print("--- 步驟 3.4：ModelManager 導入成功。 ---", flush=True)
+
+    # 導入第三個模塊
+    print("--- 步驟 3.5：準備導入 ImageGenerator... ---", flush=True)
     from src.core.image_generator import ImageGenerator
-    print("--- 步驟 4：自訂模塊導入成功 ---", flush=True)
+    print("--- 步驟 4：所有自訂模塊導入成功 ---", flush=True)
+
+    # ========================================================================
 
     # 全局變量初始化
     print("--- 步驟 5：準備初始化 Config() 物件... ---", flush=True)
