@@ -43,16 +43,17 @@ models:
 # ===================================
 # 基本配置
 model: AnimefullFinalPrunedFp16Model  # 使用的模型，目前支援 StableDiffusionV15Model 與 AnimefullFinalPrunedFp16Model
-# 🎯 測試輪次安排 - 第五輪：第三輪訓練結果測試 (優化Caption版本)
+# 🎯 測試輪次安排 - 第七輪：簡化prompt + 早期權重測試 (避免過擬合)
 weight_name:                          # 使用的 LoRA 權重文件名
-  - mushroom-30.safetensors  # 穩定選擇 (損失: 0.0090)
-  - mushroom-36.safetensors  # 🥇 最佳權重 (損失: 0.0076) - 歷史最低！
-  - mushroom-40.safetensors  # 最終版本 (損失: 0.0083)
+  - mushroom-28.safetensors  # 中期收斂 (損失: 0.00317)
+  - mushroom-32.safetensors  # 後期穩定 (損失: 0.00258)
+  - mushroom-36.safetensors  # 後期穩定 (損失: 0.00258)
+  - mushroom-40.safetensors  # 後期穩定 (損失: 0.00258)
 
-# 第五輪推理配置 - 優化Caption效果驗證
+# 第七輪推理配置 - 簡化prompt + 早期權重品質驗證
 inference_config:
   - steps: 50       # 標準質量測試
-    num_images: 5    # 每個權重3張，重點測試比例穩定性
+    num_images: 3    # 每個權重3張，測試早期權重的品質表現
 
 
 # 參數配置
@@ -94,10 +95,10 @@ original_image:
 # 與訓練數據一致的觸發詞版本 (當前使用: 20 tokens，控制在77 tokens內)
 # 目的：激活LoRA學習的特徵，確保生成符合DGU蘑菇角色設定的圖像
 prompt_template: >
-  single dgu mushroom, full body, simple face, two eyes, flat mouth, only two arms, only two legs, exactly three white dots, proper cap size, consistent proportions, symmetrical features, soft shading, flat style
+  dgu mushroom, consistent proportions, symmetrical features
 
 # 正向提示詞說明 (Token計算: 20/77)：
-# - single dgu mushroom: 觸發詞，激活LoRA訓練的角色特徵，確保只生成一隻角色
+# - single dgu mushroom: 觸發詞，激活LoRA訓練的角色特徵
 # - full body: 全身圖，確保完整顯示角色從頭到腳
 # - simple face: 簡單臉部，符合卡通風格設定
 # - two eyes: 明確指定雙眼，防止多眼或缺眼
@@ -109,20 +110,39 @@ prompt_template: >
 # - symmetrical features: 對稱特徵，確保角色外觀平衡
 # - soft shading, flat style: 柔和陰影和平面風格，維持卡通質感
 
+# 正向提示詞配置
+positive_prompt_simple: >
+  dgu mushroom, simple face, two eyes, flat mouth
+
+positive_prompt_medium: >
+  dgu mushroom, consistent proportions, symmetrical features, soft shading
+
+positive_prompt: >
+  dgu mushroom, consistent proportions, symmetrical features, soft shading, flat style, proper cap size, exactly three white dots
+
 # ===================================
 # 負向提示詞配置
 # ===================================
 # 最終優化版本 - 分類控制各種生成問題
 # 目的：防止生成不符合DGU蘑菇角色設定的特徵和問題
+# 負向提示詞 - 簡易版
+negative_prompt_simple: >
+  low quality, bad quality, worst quality
+
+# 負向提示詞 - 中度版
+negative_prompt_medium: >
+  low quality, bad quality, worst quality, blurry, multiple characters, cropped
+
+# 負向提示詞 - 高度版
 negative_prompt: >
   inconsistent proportions, asymmetrical features, distorted cap, missing white dots, wrong cap color, deformed body,
-  extra limbs, multiple arms, more than two arms, four arms, extra arms, duplicate arms, symmetrical arms, mirrored arms, human arms, long arms, extended arms, visible hands, fingers, human hands, wrong hands, distorted anatomy, malformed face,
+  extra limbs, multiple arms, more than two arms, human arms, long arms, extended arms, visible hands, fingers, human hands, wrong hands, distorted anatomy, malformed face,
   extra legs, multiple legs, more than two legs, human legs, long legs, extended legs, bare feet, human feet, toes, detailed feet, no shoes, missing shoes,
   complex face, detailed face, nose, nostrils, eyebrows, eyelashes, wrinkles, facial hair, beard, mustache, cheeks, human face, realistic face,
   multiple eyes, more than two eyes, extra eyes, complex eyes, detailed eyes, pupils, iris, eye details,
-  multiple mouths, extra mouth, complex mouth, teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth, protruding mouth, extruded mouth,
-  four white dots, extra white dots, more than three dots, wrong number of dots, missing dots, dot pattern error, mirrored dots, symmetrical dot pattern,
-  oversized cap, large cap, big cap, huge cap, cap too big, wrong cap size, disproportionate cap,
+  multiple mouths, extra mouth, complex mouth, teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth,
+  extra white dots, wrong number of dots, missing dots,
+  oversized cap, large cap, disproportionate cap,
   multiple characters, duplicate characters, multiple mushrooms, two mushrooms, group, crowd, more than one character, extra character,
   cropped, cropped body, partial body, cut off, cropped legs, cropped arms, cropped head, close-up, portrait, head shot, upper body only,
   blurry, out of focus, motion blur, low quality, bad quality, worst quality, jpeg artifacts, compression artifacts,
@@ -167,34 +187,4 @@ negative_prompt: >
 #
 # 【帽子大小控制 - 新增】
 # - oversized cap, large cap, big cap, huge cap: 過大帽子 - 防止蘑菇帽過大
-# - cap too big, wrong cap size, disproportionate cap: 帽子比例 - 確保帽子與身體比例協調
-#
-# 【數量與構圖控制】
-# - multiple characters, duplicate characters: 多角色 - 確保只有單一角色
-# - multiple mushrooms, two mushrooms: 多蘑菇 - 防止生成多隻蘑菇
-# - group, crowd, more than one character: 群組 - 避免群體場景
-# - cropped, partial body, cut off: 裁切問題 - 確保完整全身顯示
-# - close-up, portrait, head shot, upper body only: 特寫問題 - 避免只顯示部分身體
-#
-# 【圖像品質控制】
-# - blurry, out of focus, motion blur: 模糊問題 - 確保圖像清晰
-# - low quality, bad quality, worst quality: 品質問題 - 提升整體品質
-# - jpeg artifacts, compression artifacts: 壓縮問題 - 避免壓縮瑕疵
-#
-# 【風格控制】
-# - plush toy look, toy-like, clay-like: 材質問題 - 避免玩具或黏土質感
-# - squished character: 壓扁角色 - 防止角色變形
-# - overly glossy, strange shine, bloom: 光澤問題 - 避免過度光澤效果
-# - realistic rendering, hard shadow: 寫實問題 - 保持卡通風格
-# - 3d, CGI, realistic, claymation: 渲染風格 - 避免3D或寫實風格
-#
-# 【技術與後製控制】
-# - sketch, low-res, pixelated: 技術問題 - 避免草圖或低解析度
-# - watermark, text, logo, signature: 標記問題 - 確保乾淨畫面
-# - artist name: 簽名問題 - 避免藝術家簽名
-#
-# 【顏色與背景控制】
-# - brown mushroom, red mushroom, green mushroom: 顏色控制 - 保持淺藍色蘑菇帽
-# - wrong mushroom color: 錯誤顏色 - 防止帽子顏色變異
-# - background characters, crowd in background: 背景控制 - 確保背景乾淨
-# - busy background: 複雜背景 - 避免背景干擾主角
+# - cap too big, wrong cap size: 確保帽子與身體比例協調

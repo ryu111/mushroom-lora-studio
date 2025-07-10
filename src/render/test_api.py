@@ -10,7 +10,7 @@ import time
 from PIL import Image
 
 # API 端點
-API_URL = "http://localhost:8000"
+API_URL = "http://localhost:10000"
 
 def test_health():
     """測試健康檢查端點"""

@@ -171,7 +171,7 @@ if __name__ == "__main__":
     
     # 從環境變數讀取配置（適配 Render）
     host = "0.0.0.0"  # Render 要求必須是 0.0.0.0
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 10000))  # Render 預設端口為 10000
     
     print(f"🍄 蘑菇角色生成 API 啟動中...")
     print(f"📡 監聽地址: {host}:{port}")
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     try:
         # 使用字符串形式，避免模塊導入問題
         uvicorn.run(
-            "src.api:app",
+            "src.render.api:app",
             host=host,
             port=port,
             reload=False,  # 生產環境不使用 reload
