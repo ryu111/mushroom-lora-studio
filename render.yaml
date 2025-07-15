@@ -18,3 +18,7 @@ services:
         # 它將您專案的根目錄 (.) 加入到 Python 的模塊搜索路徑中。
         # 這就是為什麼您的程式碼可以使用 `from src.core.config_manager ...` 這種絕對路徑導入，
         # 而不會出現 ModuleNotFoundError 的原因。
+      - key: FORCE_CPU
+        value: "true"
+        # 強制使用 CPU 運算，適用於 Render 等雲端平台
+        # 避免 CUDA/MPS 相關錯誤，確保穩定運行

@@ -76,14 +76,44 @@ class Config:
             sys.exit(1) # 終止程式
     
     def get(self, key, default=None):
-        """獲取配置項"""
-        # 確保 self.config 不是 None
-        if self.config:
-            return self.config.get(key, default)
-        return default
+        """獲取配置項，支援模型預設配置"""
+        if not self.config:
+            return default
+            
+        # 如果是請求 parameters 或 image_size，先檢查是否有模型預設配置
+        if key in ['parameters', 'image_size']:
+            model_name = self.config.get('model')
+            if model_name and 'models' in self.config:
+                model_config = self.config['models'].get(model_name, {})
+                default_key = f'default_{key}'
+                if default_key in model_config:
+                    # 如果配置檔案中有手動設定，則合併配置
+                    manual_config = self.config.get(key, {})
+                    default_config = model_config[default_key]
+                    if manual_config:
+                        # 手動配置優先，但缺失的項目用預設值補充
+                        merged_config = default_config.copy()
+                        merged_config.update(manual_config)
+                        return merged_config
+                    else:
+                        return default_config
+        
+        # 如果是請求 weight_name，根據模型類型選擇對應的 LoRA 權重
+        if key == 'weight_name':
+            model_name = self.config.get('model')
+            if model_name and 'models' in self.config and 'lora_weights' in self.config:
+                model_config = self.config['models'].get(model_name, {})
+                lora_type = model_config.get('compatible_lora_type')
+                if lora_type and lora_type in self.config['lora_weights']:
+                    return self.config['lora_weights'][lora_type]
+        
+        return self.config.get(key, default)
     
     def __getitem__(self, key):
         """通過索引獲取配置項"""
         if self.config:
+            result = self.get(key)
+            if result is not None:
+                return result
             return self.config[key]
         raise KeyError(f"配置字典未初始化，無法獲取鍵 '{key}'")

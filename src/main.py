@@ -2,6 +2,20 @@
 圖像生成腳本
 用於生成基於 Stable Diffusion 的圖像
 """
+import os
+import torch
+
+# Mac M1 MPS 記憶體優化：在導入其他模組前設定
+if torch.backends.mps.is_available():
+    print("🍎 檢測到 Apple Silicon MPS，設定記憶體優化...")
+    # 清除可能衝突的環境變數
+    if "PYTORCH_MPS_HIGH_WATERMARK_RATIO" in os.environ:
+        del os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"]
+    # 設定為 0.0 實現按需分配記憶體（解決 SDXL 記憶體衝突）
+    os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+    print(f"✅ MPS 記憶體策略設定為按需分配 (WATERMARK_RATIO=0.0)")
+
 from src.core.config_manager import Config
 from src.core.model_manager import ModelManager
 from src.core.image_generator import ImageGenerator

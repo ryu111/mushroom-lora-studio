@@ -47,7 +47,13 @@ class ModelManager:
         model_name_for_file = self.model_name
         if model_name_for_file.endswith("Model"):
             model_name_for_file = model_name_for_file[:-5]
-        module_file = ''.join(['_' + c.lower() if c.isupper() else c.lower() for c in model_name_for_file]).lstrip('_')
+        
+        # 特殊處理 XL 模型名稱
+        if model_name_for_file == "StableDiffusionXL":
+            module_file = "stable_diffusion_xl"
+        else:
+            # 一般的駝峰轉換
+            module_file = ''.join(['_' + c.lower() if c.isupper() else c.lower() for c in model_name_for_file]).lstrip('_')
         
         try:
             # 主要嘗試路徑: src.models
