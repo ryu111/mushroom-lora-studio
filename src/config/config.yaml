@@ -1,12 +1,25 @@
+random_seed_list: [42, 1234, 2025, 31415, 8888, 9999]
+
 image_size:
   height: 512
   width: 512
 inference_config:
-- num_images: 3
-  steps: 50
+- num_images: 1
+  steps: 20
 lora_weights:
   sd15:
+  - dgu-01.safetensors
+  - dgu-02.safetensors
+  - dgu-03.safetensors
+  - dgu-04.safetensors
+  - dgu-05.safetensors
+  - dgu-06.safetensors
+  - dgu-07.safetensors
+  - dgu-08.safetensors
+  - dgu-09.safetensors
   - dgu-10.safetensors
+
+  # - mushroom-40.safetensors
   sdxl:
   - dgu-10.safetensors
 model: AnimefullFinalPrunedFp16Model
@@ -17,9 +30,9 @@ models:
       height: 512
       width: 512
     default_parameters:
-      guidance_scale: 8.5
+      guidance_scale: 8.0
       noise_level: 0.0
-      strength: 0.6
+      strength: 0.4
     模型路徑: models/animefull-final-pruned-fp16.safetensors
     特點: 適合 LoRA 訓練與應用
     適合用途: 常見 LoRA 訓練底模
@@ -55,18 +68,89 @@ models:
     適合用途: 高品質圖像生成、細節豐富
 
 original_image:
-  path: assets/reference_images/000.png
+  path: assets/reference_images/dgu_01.png
 
-# base_prompt: 定義角色 dgu 的基本外觀描述，為所有圖片的主體基礎提示詞，可重複利用以節省 token 並提高一致性。
-base_prompt: >
-  dgu, <lora:dgu-10:1.0>,
-  full body, simple face, two eyes, flat mouth,
-  only two arms, only two legs, exactly three white dots,
-  proper cap size, consistent proportions, symmetrical features,
-  soft shading, flat style
+# ── Prompt 範本
+# 載入 LoRA 權重
+# 角色識別
+# 視角：正面
+# 淺藍菇頭
+# 五白點
+# 黃色鞋底
+# 簡易臉部
+# 全身視圖
+# 卡通風格
+# 雙眼張開
+# 張嘴
+# 走路
+prompt_template: >
+  dgu,
+  front,
+  light blue mushroom cap,
+  five white dots,
+  yellow shoe soles,
+  simple face,
+  full body,
+  cartoon style,
+  eyes open,
+  open mouth,
+  walking
 
-# prompt_template: 用於定義每次生成圖時的變化部分，例如姿勢、情緒、背景場景等。會套用 base_prompt 為前綴。
-# ${base_prompt},
+# ── 排除不想要的特徵
+# 品質不佳
+# 最差品質
+# JPEG 壓縮失真
+# 模糊
+# 雜訊
+# 人體結構錯誤
+# 額外肢體
+# 多角色
+# 群眾
+# 帽子失真
+# 缺少白點
+# 裁切
+# 半身構圖
+# 真人風格
+# 人手
+# 浮水印
+# logo
+# 簽名
+# 平面風格
+# 速寫
+# 繪畫
+negative_prompt: >
+  low quality,
+  worst quality,
+  jpeg artifacts,
+  blurry,
+  noisy,
+  bad anatomy,
+  extra limbs,
+  multiple characters,
+  crowd,
+  distorted cap,
+  missing white dots,
+  cropped,
+  portrait,
+  realistic face,
+  human hands,
+  watermark,
+  logo,
+  signature,
+  flat style,
+  sketch,
+  painting
+
+# # base_prompt: 定義角色 dgu 的基本外觀描述，為所有圖片的主體基礎提示詞，可重複利用以節省 token 並提高一致性。
+# base_prompt: >
+#   dgu, <lora:dgu-10:1.0>,
+#   full body, simple face, two eyes, flat mouth,
+#   only two arms, only two legs, exactly three white dots,
+#   proper cap size, consistent proportions, symmetrical features,
+#   soft shading, flat style
+
+# # prompt_template: 用於定義每次生成圖時的變化部分，例如姿勢、情緒、背景場景等。會套用 base_prompt 為前綴。
+# # ${base_prompt},
 # prompt_template: >
 #   dgu,
 #   full body, simple face, two eyes, flat mouth,
@@ -97,31 +181,30 @@ base_prompt: >
 #   brown mushroom, red mushroom, green mushroom, wrong mushroom color
 
 
-negative_prompt: 'inconsistent proportions, asymmetrical features, distorted cap,
-  missing white dots, wrong cap color, deformed body, extra limbs, multiple arms,
-  more than two arms, human arms, long arms, extended arms, visible hands, fingers,
-  human hands, wrong hands, distorted anatomy, malformed face, extra legs, multiple
-  legs, more than two legs, human legs, long legs, extended legs, bare feet, human
-  feet, toes, detailed feet, no shoes, missing shoes, complex face, detailed face,
-  nose, nostrils, eyebrows, eyelashes, wrinkles, facial hair, beard, mustache, cheeks,
-  human face, realistic face, multiple eyes, more than two eyes, extra eyes, complex
-  eyes, detailed eyes, pupils, iris, eye details, multiple mouths, extra mouth, complex
-  mouth, teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth,
-  extra white dots, wrong number of dots, missing dots, oversized cap, large cap,
-  disproportionate cap, multiple characters, duplicate characters, multiple mushrooms,
-  two mushrooms, group, crowd, more than one character, extra character, cropped,
-  cropped body, partial body, cut off, cropped legs, cropped arms, cropped head, close-up,
-  portrait, head shot, upper body only, blurry, out of focus, motion blur, low quality,
-  bad quality, worst quality, jpeg artifacts, compression artifacts, plush toy look,
-  toy-like, clay-like, squished character, overly glossy, strange shine, bloom, glowing
-  outline, realistic rendering, hard shadow, specular highlight, reflective surface,
-  wrong face angle, cropped face, occluded face, no face, faceless, 3d, CGI, realistic,
-  claymation, sketch, low-res, pixelated, watermark, text, logo, signature, artist
-  name, extra mushroom, brown mushroom, red mushroom, green mushroom, wrong mushroom
-  color, background characters, crowd in background, busy background'
-# original_image:
-#   path: assets/reference_images/000.png
+# prompt_template: 'single dgu mushroom, full body, simple face, two eyes, flat mouth,
+#   only two arms, only two legs, exactly three white dots, proper cap size, consistent
+#   proportions, symmetrical features, soft shading, flat style'
 
-prompt_template: 'single dgu mushroom, full body, simple face, two eyes, flat mouth,
-  only two arms, only two legs, exactly three white dots, proper cap size, consistent
-  proportions, symmetrical features, soft shading, flat style'
+# negative_prompt: 'inconsistent proportions, asymmetrical features, distorted cap,
+#   missing white dots, wrong cap color, deformed body, extra limbs, multiple arms,
+#   more than two arms, human arms, long arms, extended arms, visible hands, fingers,
+#   human hands, wrong hands, distorted anatomy, malformed face, extra legs, multiple
+#   legs, more than two legs, human legs, long legs, extended legs, bare feet, human
+#   feet, toes, detailed feet, no shoes, missing shoes, complex face, detailed face,
+#   nose, nostrils, eyebrows, eyelashes, wrinkles, facial hair, beard, mustache, cheeks,
+#   human face, realistic face, multiple eyes, more than two eyes, extra eyes, complex
+#   eyes, detailed eyes, pupils, iris, eye details, multiple mouths, extra mouth, complex
+#   mouth, teeth, tongue, lips, detailed mouth, realistic mouth, human mouth, 3d mouth,
+#   extra white dots, wrong number of dots, missing dots, oversized cap, large cap,
+#   disproportionate cap, multiple characters, duplicate characters, multiple mushrooms,
+#   two mushrooms, group, crowd, more than one character, extra character, cropped,
+#   cropped body, partial body, cut off, cropped legs, cropped arms, cropped head, close-up,
+#   portrait, head shot, upper body only, blurry, out of focus, motion blur, low quality,
+#   bad quality, worst quality, jpeg artifacts, compression artifacts, plush toy look,
+#   toy-like, clay-like, squished character, overly glossy, strange shine, bloom, glowing
+#   outline, realistic rendering, hard shadow, specular highlight, reflective surface,
+#   wrong face angle, cropped face, occluded face, no face, faceless, 3d, CGI, realistic,
+#   claymation, sketch, low-res, pixelated, watermark, text, logo, signature, artist
+#   name, extra mushroom, brown mushroom, red mushroom, green mushroom, wrong mushroom
+#   color, background characters, crowd in background, busy background'
+

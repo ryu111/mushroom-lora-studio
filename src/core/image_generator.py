@@ -59,10 +59,17 @@ class ImageGenerator:
             self.prompt = f"{base_prompt}, {action}, {expression}, consistent proportions, symmetrical features"
 
     def _generate_image_result(self, steps, generator):
-        # 除錯：印出 init_image 是否有被使用
-        print(f"[DEBUG] init_image 傳入: {self.original_image is not None}")
-        print(f"[DEBUG] prompt: {self.prompt}")
-        print(f"[DEBUG] negative_prompt: {self.negative_prompt}")
+        # # 除錯：印出 init_image 是否有被使用
+        # print(f"[DEBUG] init_image 傳入: {self.original_image is not None}")
+        # print(f"[DEBUG] prompt: {self.prompt}")
+        # print(f"[DEBUG] negative_prompt: {self.negative_prompt}")
+        # print(f"[DEBUG] strength: {self.strength}")
+        # print(f"[DEBUG] guidance_scale: {self.guidance_scale}")
+        # print(f"[DEBUG] height: {self.height}")
+        # print(f"[DEBUG] width: {self.width}")
+        # print(f"[DEBUG] num_inference_steps: {steps}")
+        # print(f"[DEBUG] num_images_per_prompt: 1")
+        # print(f"[DEBUG] generator: {generator}")
         return self.pipe(
             prompt=self.prompt,
             negative_prompt=self.negative_prompt,
@@ -83,7 +90,7 @@ class ImageGenerator:
 
     def _process_image(self, image):
         """🚀 記憶體優化版本的圖像去背處理"""
-        print("--- [ImageGenerator] 正在處理圖像去背... ---", flush=True)
+        # print("--- [ImageGenerator] 正在處理圖像去背... ---", flush=True)
         
         # 使用共享的 rembg session，避免重複載入模型
         if ImageGenerator._rembg_session is None:
@@ -109,7 +116,7 @@ class ImageGenerator:
                 # 如果返回的是 PIL Image 或其他格式
                 processed_image = result
         
-        print("--- [ImageGenerator] 圖像去背完成。 ---", flush=True)
+        # print("--- [ImageGenerator] 圖像去背完成。 ---", flush=True)
         return processed_image
 
     def _close_images(self, *images):
@@ -129,8 +136,35 @@ class ImageGenerator:
             # Mac M1 MPS 記憶體清理
             torch.mps.empty_cache()
         # CPU 環境不需要特殊的快取清理
+
+    def generate_images(self):
+        print("--- [ImageGenerator] 開始批次生成圖像... ---", flush=True)
         
-    def generate_single_image_api(self, steps, output_dir):
+        inference_configs = self.config.get('inference_config', [{'steps': 50, 'num_images': 1}])
+        random_seed_list = self.config.get('random_seed_list', [])
+        
+        for seed in (random_seed_list if random_seed_list else [int(time.time())]):
+            for config in inference_configs:
+                steps = config.get('steps', 50)
+                num_images = config.get('num_images', 1)
+                
+                print(f"--- [ImageGenerator] 使用的隨機種子: {seed}，生成 {num_images} 張圖像，步數: {steps} ---", flush=True)
+                
+                for i in range(num_images):
+                    try:
+                        output_dir = f"outputs/{self.weight_name}/{steps}"
+                        os.makedirs(output_dir, exist_ok=True)
+                        
+                        self.generate_single_image_api(steps, output_dir, seed)
+                        print(f"✅ 已生成第 {i+1}/{num_images} 張圖像")
+                        
+                    except Exception as e:
+                        print(f"⚠️ 生成第 {i+1} 張圖像時出錯: {e}")
+                        continue
+        
+        print("--- [ImageGenerator] 批次生成完成。 ---", flush=True)
+
+    def generate_single_image_api(self, steps, output_dir, seed):
         """🚀 記憶體優化版本的圖像生成"""
         image = None
         output_img = None
@@ -148,10 +182,8 @@ class ImageGenerator:
                 print("🔍 生成前記憶體清理完成 (CPU 模式)")
             
             self._prepare_prompt_for_api()
-            random_seed = int(time.time())
-            generator = torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu").manual_seed(random_seed)
-            
-            # 生成圖像
+            generator = torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu").manual_seed(seed)
+            # 生成圖像的邏輯
             result = self._generate_image_result(steps, generator)
             image = self._extract_image_from_result(result)
             
@@ -162,7 +194,7 @@ class ImageGenerator:
                 print(f"🔍 圖像生成後 CUDA 記憶體使用: {torch.cuda.memory_allocated()/1024**3:.2f}GB")
             elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
                 torch.mps.empty_cache()
-                print(f"🔍 圖像生成後 MPS 記憶體使用: {torch.mps.current_allocated_memory()/1024**3:.2f}GB")
+                # print(f"🔍 圖像生成後 MPS 記憶體使用: {torch.mps.current_allocated_memory()/1024**3:.2f}GB")
             else:
                 print("🔍 圖像生成後記憶體清理完成 (CPU 模式)")
             
@@ -176,7 +208,8 @@ class ImageGenerator:
                 image = None
             
             timestamp = int(time.time())
-            filename = f"{self.weight_name}_{self.action_key}_{self.expression_key}_{timestamp}_transparent.png"
+            filename = f"{self.weight_name}_{seed}_{timestamp}_transparent.png"
+            # filename = f"{self.weight_name}_{self.action_key}_{self.expression_key}_{seed}_{timestamp}_transparent.png"
             full_path = os.path.join(output_dir, filename)
             
             # 修正 output_img 可能為 ndarray 或 bytes 的情況
@@ -220,36 +253,5 @@ class ImageGenerator:
             elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
                 torch.mps.empty_cache()
             raise e
-
-    def generate_images(self):
-        """批次生成圖像 (主程式使用)"""
-        print("--- [ImageGenerator] 開始批次生成圖像... ---", flush=True)
-        
-        # 獲取推理配置
-        inference_configs = self.config.get('inference_config', [{'steps': 50, 'num_images': 1}])
-        
-        for config in inference_configs:
-            steps = config.get('steps', 50)
-            num_images = config.get('num_images', 1)
-            
-            print(f"--- [ImageGenerator] 生成 {num_images} 張圖像，步數: {steps} ---", flush=True)
-            
-            for i in range(num_images):
-                try:
-                    # 準備輸出目錄 (與 API 保持一致)
-                    import os
-                    output_dir = f"outputs/{self.weight_name}/{steps}"
-                    os.makedirs(output_dir, exist_ok=True)
-                    
-                    # 生成圖像
-                    result_path = self.generate_single_image_api(steps, output_dir)
-                    print(f"✅ 已生成第 {i+1}/{num_images} 張圖像")
-                    
-                except Exception as e:
-                    print(f"⚠️ 生成第 {i+1} 張圖像時出錯: {e}")
-                    continue
-        
-        print("--- [ImageGenerator] 批次生成完成。 ---", flush=True)
-
 # 我們甚至可以在 class 定義之後也加上 print，確保整個檔案都執行完畢
 print("--- [ImageGenerator] 模塊已成功被定義，所有頂層代碼執行完畢。 ---", flush=True)
